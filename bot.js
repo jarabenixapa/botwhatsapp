@@ -1,87 +1,82 @@
-// bot.js - VERSIÓN CORREGIDA PARA RAILWAY
+// bot.js - VERSIÓN ULTRA-FLEXIBLE PARA RAILWAY
 console.log('🚀 Bot iniciando en Railway...');
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
 
-// ================== CONFIGURACIÓN FIREBASE CORREGIDA ==================
-console.log('🔍 Verificando variables de entorno...');
+// ================== CONFIGURACIÓN FIREBASE SUPER FLEXIBLE ==================
+console.log('🔍 Buscando variables de Firebase...');
 
-// Verificar TODAS las variables primero
-const requiredVars = {
-    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-    FIREBASE_DATABASE_URL: process.env.FIREBASE_DATABASE_URL
+// Buscar variables con nombres alternativos (para compatibilidad)
+const firebaseConfig = {
+    projectId: process.env.FIREBASE_PROJECT_ID || process.env.project_id,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || process.env.client_email,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY || process.env.private_key || process.env.FIREBASE_PREVATE_KEY, // Por si hay typo
+    databaseURL: process.env.FIREBASE_DATABASE_URL
 };
 
-// Debug: mostrar estado de variables (sin mostrar valores completos por seguridad)
-console.log('📋 Estado de variables:');
-Object.keys(requiredVars).forEach(key => {
-    const value = requiredVars[key];
-    if (value) {
-        console.log(`   ✅ ${key}: PRESENTE (${value.length} caracteres)`);
-    } else {
-        console.log(`   ❌ ${key}: AUSENTE`);
-    }
-});
+// Debug: mostrar qué encontramos
+console.log('📋 Variables encontradas:');
+console.log(`   projectId: ${firebaseConfig.projectId ? '✅ (' + firebaseConfig.projectId.length + ' chars)' : '❌'}`);
+console.log(`   clientEmail: ${firebaseConfig.clientEmail ? '✅ (' + firebaseConfig.clientEmail.length + ' chars)' : '❌'}`);
+console.log(`   privateKey: ${firebaseConfig.privateKey ? '✅ (' + firebaseConfig.privateKey.length + ' chars)' : '❌'}`);
+console.log(`   databaseURL: ${firebaseConfig.databaseURL ? '✅ (' + firebaseConfig.databaseURL.length + ' chars)' : '❌'}`);
 
-// Verificar si falta alguna variable
-const missingVars = Object.keys(requiredVars).filter(key => !requiredVars[key]);
-if (missingVars.length > 0) {
-    console.log('\n❌ ERROR: Faltan variables de entorno:');
-    missingVars.forEach(varName => console.log(`   - ${varName}`));
-    console.log('\n📝 Cómo solucionar en Railway:');
-    console.log('   1. Ve a https://railway.app');
-    console.log('   2. Selecciona tu proyecto');
-    console.log('   3. Haz clic en "Variables"');
-    console.log('   4. Agrega las variables faltantes');
-    console.log('   5. Haz clic en "Deploy" para reiniciar');
+// Verificar que tenemos todo
+const missing = [];
+if (!firebaseConfig.projectId) missing.push('projectId');
+if (!firebaseConfig.clientEmail) missing.push('clientEmail');
+if (!firebaseConfig.privateKey) missing.push('privateKey');
+if (!firebaseConfig.databaseURL) missing.push('databaseURL');
+
+if (missing.length > 0) {
+    console.log('\n❌ ERROR: Faltan configuraciones de Firebase:');
+    missing.forEach(item => console.log(`   - ${item}`));
+    console.log('\n💡 Solución en Railway:');
+    console.log('   1. Ve a tu proyecto en Railway');
+    console.log('   2. Haz clic en "Variables"');
+    console.log('   3. Asegúrate de tener estas variables (cualquier combinación):');
+    console.log('      - FIREBASE_PROJECT_ID o project_id');
+    console.log('      - FIREBASE_CLIENT_EMAIL o client_email');
+    console.log('      - FIREBASE_PRIVATE_KEY o private_key o FIREBASE_PREVATE_KEY');
+    console.log('      - FIREBASE_DATABASE_URL');
+    console.log('   4. Los valores deben ser los de tu proyecto Firebase');
+    console.log('   5. Haz clic en "Deploy"');
     process.exit(1);
 }
 
-// CONFIGURACIÓN FIREBASE - VERSIÓN CORREGIDA
+// CONFIGURAR FIREBASE
 try {
-    // IMPORTANTE: Formatear correctamente la clave privada
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    console.log('🔑 Configurando Firebase...');
     
-    // Reemplazar \\n por \n si es necesario (para Railway)
+    // Formatear clave privada
+    let privateKey = firebaseConfig.privateKey;
     if (privateKey.includes('\\n')) {
         privateKey = privateKey.replace(/\\n/g, '\n');
     }
     
-    // Asegurarse de que la clave tenga el formato correcto
-    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-        console.log('⚠️ ADVERTENCIA: La clave privada no tiene el formato esperado');
-    }
-    
-    console.log('🔑 Configurando Firebase...');
-    
     admin.initializeApp({
         credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            projectId: firebaseConfig.projectId,
+            clientEmail: firebaseConfig.clientEmail,
             privateKey: privateKey
         }),
-        databaseURL: process.env.FIREBASE_DATABASE_URL
+        databaseURL: firebaseConfig.databaseURL
     });
     
-    console.log('✅ Firebase conectado correctamente');
+    console.log('✅ Firebase conectado exitosamente!');
+    console.log(`   Proyecto: ${firebaseConfig.projectId}`);
+    console.log(`   BD URL: ${firebaseConfig.databaseURL}`);
     
 } catch (error) {
-    console.log('❌ ERROR en configuración de Firebase:');
-    console.log('   Mensaje:', error.message);
-    console.log('   Stack:', error.stack ? error.stack.substring(0, 200) + '...' : 'No disponible');
-    console.log('\n🔧 Solución:');
-    console.log('   1. Verifica que la clave privada sea la correcta');
-    console.log('   2. Asegúrate de copiar TODO el contenido del JSON de Firebase');
-    console.log('   3. En Railway, pega la clave COMPLETA en una sola línea');
+    console.log('❌ ERROR conectando a Firebase:', error.message);
+    console.log('   Verifica que los valores sean correctos');
     process.exit(1);
 }
 
 const db = admin.database();
-console.log('🗄️  Base de datos Firebase lista');
+console.log('🗄️  Base de datos lista');
 
 // ================== CLIENTE WHATSAPP ==================
 const client = new Client({

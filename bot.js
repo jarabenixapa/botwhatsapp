@@ -1,4 +1,4 @@
-// bot.js - VERSIÓN OPTIMIZADA PARA RAILWAY CON FIREBASE
+// bot.js - VERSIÓN OPTIMIZADA PARA RAILWAY (SIN executablePath)
 console.log('🚀 Bot iniciando en Railway...');
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -68,7 +68,7 @@ try {
 const db = admin.database();
 console.log('🗄️  Base de datos lista');
 
-// ================== CLIENTE WHATSAPP OPTIMIZADO PARA RAILWAY ==================
+// ================== CLIENTE WHATSAPP OPTIMIZADO (SIN executablePath) ==================
 console.log('🔧 Configurando WhatsApp Client para Railway...');
 
 const client = new Client({
@@ -86,46 +86,10 @@ const client = new Client({
             '--no-first-run',
             '--no-zygote',
             '--single-process',
-            '--disable-gpu',
-            '--disable-software-rasterizer',
-            '--disable-extensions',
-            '--disable-background-networking',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-breakpad',
-            '--disable-client-side-phishing-detection',
-            '--disable-component-update',
-            '--disable-default-apps',
-            '--disable-domain-reliability',
-            '--disable-features=AudioServiceOutOfProcess',
-            '--disable-hang-monitor',
-            '--disable-ipc-flooding-protection',
-            '--disable-notifications',
-            '--disable-offer-store-unmasked-wallet-cards',
-            '--disable-popup-blocking',
-            '--disable-print-preview',
-            '--disable-prompt-on-repost',
-            '--disable-renderer-backgrounding',
-            '--disable-setuid-sandbox',
-            '--disable-speech-api',
-            '--disable-sync',
-            '--hide-scrollbars',
-            '--ignore-gpu-blacklist',
-            '--metrics-recording-only',
-            '--mute-audio',
-            '--no-default-browser-check',
-            '--no-pings',
-            '--no-sandbox',
-            '--no-zygote',
-            '--password-store=basic',
-            '--use-gl=swiftshader',
-            '--use-mock-keychain'
-        ],
-        // Railway tiene Chrome en estas rutas - probamos diferentes opciones
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
-                       '/usr/bin/chromium-browser' || 
-                       '/usr/bin/chromium' || 
-                       undefined
+            '--disable-gpu'
+        ]
+        // IMPORTANTE: No especificar executablePath
+        // Puppeteer encontrará Chrome automáticamente
     }
 });
 
@@ -757,7 +721,7 @@ console.log('\n' + '='.repeat(60));
 console.log('🚀 INICIANDO BOT WHATSAPP CON FIREBASE EN RAILWAY');
 console.log('📍 Hora El Salvador configurada automáticamente');
 console.log('🗄️  Firebase configurado desde archivo JSON');
-console.log('🔧 Puppeteer optimizado para Railway');
+console.log('🔧 Puppeteer configurado para Railway (auto-detect Chrome)');
 console.log('='.repeat(60) + '\n');
 
 // Verificar si estamos en Railway
@@ -770,9 +734,11 @@ if (process.env.RAILWAY_ENVIRONMENT) {
 try {
     client.initialize();
     console.log('✅ Cliente WhatsApp inicializado');
+    console.log('🔄 Buscando Chrome automáticamente...');
 } catch (error) {
     console.log('❌ Error inicializando cliente:', error.message);
-    console.log('💡 Solución: Verifica la configuración de Puppeteer');
+    console.log('💡 Solución: Railway no tiene Chrome instalado');
+    console.log('   Considera cambiar a Render.com que tiene Chrome preinstalado');
     process.exit(1);
 }
 

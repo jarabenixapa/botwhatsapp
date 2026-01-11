@@ -1,13 +1,13 @@
 {
-  "name": "botwhatsapp",
-  "version": "1.0.0",
-  "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "postinstall": "apt-get update && apt-get install -y chromium"
   },
   "dependencies": {
     "whatsapp-web.js": "^1.23.0",
     "qrcode-terminal": "^0.12.0",
-    "firebase-admin": "^11.11.0"
+    "firebase-admin": "^11.11.0",
+    "puppeteer": "^21.0.0",
+    "puppeteer-core": "^21.0.0"
   }
 }

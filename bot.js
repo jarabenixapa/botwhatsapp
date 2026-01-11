@@ -1,77 +1,67 @@
-// bot.js - VERSIÓN ULTRA-FLEXIBLE PARA RAILWAY
+// bot.js - VERSIÓN CON ARCHIVO JSON PARA FIREBASE
 console.log('🚀 Bot iniciando en Railway...');
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
-// ================== CONFIGURACIÓN FIREBASE SUPER FLEXIBLE ==================
-console.log('🔍 Buscando variables de Firebase...');
+// ================== CONFIGURACIÓN FIREBASE DESDE ARCHIVO ==================
+console.log('🔍 Configurando Firebase desde archivo...');
 
-// Buscar variables con nombres alternativos (para compatibilidad)
-const firebaseConfig = {
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.project_id,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || process.env.client_email,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY || process.env.private_key || process.env.FIREBASE_PREVATE_KEY, // Por si hay typo
-    databaseURL: process.env.FIREBASE_DATABASE_URL
-};
+// Ruta al archivo de clave de Firebase
+const keyPath = path.join(__dirname, 'firebase-key.json');
 
-// Debug: mostrar qué encontramos
-console.log('📋 Variables encontradas:');
-console.log(`   projectId: ${firebaseConfig.projectId ? '✅ (' + firebaseConfig.projectId.length + ' chars)' : '❌'}`);
-console.log(`   clientEmail: ${firebaseConfig.clientEmail ? '✅ (' + firebaseConfig.clientEmail.length + ' chars)' : '❌'}`);
-console.log(`   privateKey: ${firebaseConfig.privateKey ? '✅ (' + firebaseConfig.privateKey.length + ' chars)' : '❌'}`);
-console.log(`   databaseURL: ${firebaseConfig.databaseURL ? '✅ (' + firebaseConfig.databaseURL.length + ' chars)' : '❌'}`);
-
-// Verificar que tenemos todo
-const missing = [];
-if (!firebaseConfig.projectId) missing.push('projectId');
-if (!firebaseConfig.clientEmail) missing.push('clientEmail');
-if (!firebaseConfig.privateKey) missing.push('privateKey');
-if (!firebaseConfig.databaseURL) missing.push('databaseURL');
-
-if (missing.length > 0) {
-    console.log('\n❌ ERROR: Faltan configuraciones de Firebase:');
-    missing.forEach(item => console.log(`   - ${item}`));
-    console.log('\n💡 Solución en Railway:');
-    console.log('   1. Ve a tu proyecto en Railway');
-    console.log('   2. Haz clic en "Variables"');
-    console.log('   3. Asegúrate de tener estas variables (cualquier combinación):');
-    console.log('      - FIREBASE_PROJECT_ID o project_id');
-    console.log('      - FIREBASE_CLIENT_EMAIL o client_email');
-    console.log('      - FIREBASE_PRIVATE_KEY o private_key o FIREBASE_PREVATE_KEY');
-    console.log('      - FIREBASE_DATABASE_URL');
-    console.log('   4. Los valores deben ser los de tu proyecto Firebase');
-    console.log('   5. Haz clic en "Deploy"');
+// Verificar si el archivo existe
+if (!fs.existsSync(keyPath)) {
+    console.log('❌ ERROR: No se encontró el archivo firebase-key.json');
+    console.log('💡 Solución:');
+    console.log('   1. Ve a Firebase Console');
+    console.log('   2. Genera una nueva clave privada');
+    console.log('   3. Descarga el archivo JSON');
+    console.log('   4. Renómbralo como firebase-key.json');
+    console.log('   5. Súbelo a tu repositorio en GitHub');
+    console.log('   6. Railway lo tomará automáticamente');
     process.exit(1);
 }
 
+// Cargar configuración desde archivo
+let serviceAccount;
+try {
+    serviceAccount = require(keyPath);
+    console.log('✅ Archivo firebase-key.json cargado correctamente');
+    console.log(`   Proyecto: ${serviceAccount.project_id}`);
+    console.log(`   Email: ${serviceAccount.client_email}`);
+} catch (error) {
+    console.log('❌ Error cargando firebase-key.json:', error.message);
+    process.exit(1);
+}
+
+// Obtener database URL desde variables de entorno o usar una por defecto
+const databaseURL = process.env.FIREBASE_DATABASE_URL || 
+                   `https://${serviceAccount.project_id}.firebaseio.com`;
+
+console.log(`🔗 URL de base de datos: ${databaseURL}`);
+
 // CONFIGURAR FIREBASE
 try {
-    console.log('🔑 Configurando Firebase...');
-    
-    // Formatear clave privada
-    let privateKey = firebaseConfig.privateKey;
-    if (privateKey.includes('\\n')) {
-        privateKey = privateKey.replace(/\\n/g, '\n');
-    }
+    console.log('🔑 Inicializando Firebase...');
     
     admin.initializeApp({
         credential: admin.credential.cert({
-            projectId: firebaseConfig.projectId,
-            clientEmail: firebaseConfig.clientEmail,
-            privateKey: privateKey
+            projectId: serviceAccount.project_id,
+            clientEmail: serviceAccount.client_email,
+            privateKey: serviceAccount.private_key.replace(/\\n/g, '\n')
         }),
-        databaseURL: firebaseConfig.databaseURL
+        databaseURL: databaseURL
     });
     
     console.log('✅ Firebase conectado exitosamente!');
-    console.log(`   Proyecto: ${firebaseConfig.projectId}`);
-    console.log(`   BD URL: ${firebaseConfig.databaseURL}`);
     
 } catch (error) {
     console.log('❌ ERROR conectando a Firebase:', error.message);
-    console.log('   Verifica que los valores sean correctos');
+    console.log('   Detalles:', error);
     process.exit(1);
 }
 
@@ -583,7 +573,8 @@ class ComandoHandler {
                       `👥 Grupos activos: ${grupos.length}\n` +
                       `⏰ Programaciones: ${programaciones.length}\n` +
                       `🗄️  Firebase: ✅ Conectado\n` +
-                      `🚀 Plataforma: Railway`;
+                      `🚀 Plataforma: Railway\n` +
+                      `🔧 Método: Archivo JSON`;
         
         await message.reply(estado);
     }
@@ -601,7 +592,7 @@ client.on('ready', async () => {
     console.log('✅ BOT CONECTADO Y LISTO');
     console.log(`📱 Usuario: ${client.info.pushname}`);
     console.log(`📞 Número: ${client.info.wid.user}`);
-    console.log('🔥 Firebase: Conectado');
+    console.log('🔥 Firebase: Conectado desde archivo');
     console.log('⏰ Programador: Iniciado');
     console.log('='.repeat(50) + '\n');
     
@@ -688,7 +679,7 @@ client.on('authenticated', () => {
 console.log('\n' + '='.repeat(50));
 console.log('🚀 INICIANDO BOT WHATSAPP CON FIREBASE');
 console.log('📍 Hora El Salvador configurada');
-console.log('🗄️  Firebase configurado');
+console.log('🗄️  Firebase configurado desde archivo');
 console.log('='.repeat(50) + '\n');
 
 // Iniciar cliente

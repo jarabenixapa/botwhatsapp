@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  botwhatsapp:
+    build: .
+    container_name: bot-whatsapp
+    restart: unless-stopped
+    environment:
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    volumes:
+      - ./sessions:/app/sessions

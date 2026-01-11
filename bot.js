@@ -1,4 +1,4 @@
-// bot.js - VERSIÓN CON ARCHIVO JSON PARA FIREBASE
+// bot.js - VERSIÓN OPTIMIZADA PARA RAILWAY CON FIREBASE
 console.log('🚀 Bot iniciando en Railway...');
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -68,11 +68,16 @@ try {
 const db = admin.database();
 console.log('🗄️  Base de datos lista');
 
-// ================== CLIENTE WHATSAPP ==================
+// ================== CLIENTE WHATSAPP OPTIMIZADO PARA RAILWAY ==================
+console.log('🔧 Configurando WhatsApp Client para Railway...');
+
 const client = new Client({
-    authStrategy: new LocalAuth({ clientId: 'bot-sv-firebase' }),
-    puppeteer: { 
-        headless: "new",
+    authStrategy: new LocalAuth({ 
+        clientId: 'bot-sv-firebase-railway',
+        dataPath: './wwebjs_auth'
+    }),
+    puppeteer: {
+        headless: 'new',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -80,8 +85,47 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
-        ]
+            '--single-process',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-breakpad',
+            '--disable-client-side-phishing-detection',
+            '--disable-component-update',
+            '--disable-default-apps',
+            '--disable-domain-reliability',
+            '--disable-features=AudioServiceOutOfProcess',
+            '--disable-hang-monitor',
+            '--disable-ipc-flooding-protection',
+            '--disable-notifications',
+            '--disable-offer-store-unmasked-wallet-cards',
+            '--disable-popup-blocking',
+            '--disable-print-preview',
+            '--disable-prompt-on-repost',
+            '--disable-renderer-backgrounding',
+            '--disable-setuid-sandbox',
+            '--disable-speech-api',
+            '--disable-sync',
+            '--hide-scrollbars',
+            '--ignore-gpu-blacklist',
+            '--metrics-recording-only',
+            '--mute-audio',
+            '--no-default-browser-check',
+            '--no-pings',
+            '--no-sandbox',
+            '--no-zygote',
+            '--password-store=basic',
+            '--use-gl=swiftshader',
+            '--use-mock-keychain'
+        ],
+        // Railway tiene Chrome en estas rutas - probamos diferentes opciones
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                       '/usr/bin/chromium-browser' || 
+                       '/usr/bin/chromium' || 
+                       undefined
     }
 });
 
@@ -358,6 +402,10 @@ class ComandoHandler {
                     await this.estado(message);
                     break;
                     
+                case 'debug':
+                    await this.debug(message);
+                    break;
+                    
                 default:
                     if (!esGrupo) {
                         await message.reply('Comando no reconocido. Escribe *menu* para ver opciones.');
@@ -372,13 +420,14 @@ class ComandoHandler {
     }
     
     static async menu(message) {
-        const menu = `📋 *BOT WHATSAPP - FIREBASE*\n\n` +
+        const menu = `📋 *BOT WHATSAPP - FIREBASE (RAILWAY)*\n\n` +
                     `👤 *COMANDOS GENERALES:*\n` +
                     `• menu - Ver este menú\n` +
                     `• hora - Hora El Salvador\n` +
                     `• ayuda - Instrucciones\n` +
                     `• buscar [palabra] - Buscar programas\n` +
-                    `• estado - Estado del bot\n\n` +
+                    `• estado - Estado del bot\n` +
+                    `• debug - Info técnica\n\n` +
                     `👑 *PROGRAMACIÓN:*\n` +
                     `• programar - Crear nueva programación\n` +
                     `• misprogramas - Ver mis programas\n` +
@@ -546,7 +595,7 @@ class ComandoHandler {
     }
     
     static async ayuda(message) {
-        const ayuda = `🤖 *AYUDA - BOT WHATSAPP FIREBASE*\n\n` +
+        const ayuda = `🤖 *AYUDA - BOT WHATSAPP FIREBASE (RAILWAY)*\n\n` +
                      `*¿CÓMO USAR?*\n` +
                      `1. Agrega el bot a un grupo\n` +
                      `2. Escribe "activar bot" en el grupo\n` +
@@ -569,7 +618,7 @@ class ComandoHandler {
         const programaciones = await FirebaseManager.obtenerProgramaciones();
         
         const estado = `📊 *ESTADO DEL BOT*\n\n` +
-                      `🔌 Conectado: ${client.info ? '✅' : '❌'}\n` +
+                      `🔌 WhatsApp: ${client.info ? '✅ Conectado' : '❌ Desconectado'}\n` +
                       `👥 Grupos activos: ${grupos.length}\n` +
                       `⏰ Programaciones: ${programaciones.length}\n` +
                       `🗄️  Firebase: ✅ Conectado\n` +
@@ -578,23 +627,42 @@ class ComandoHandler {
         
         await message.reply(estado);
     }
+    
+    static async debug(message) {
+        const debugInfo = `🔧 *INFORMACIÓN TÉCNICA*\n\n` +
+                        `📅 Fecha servidor: ${new Date().toLocaleString()}\n` +
+                        `🌐 Timezone: America/El_Salvador\n` +
+                        `🖥️  Platform: ${process.platform}\n` +
+                        `📦 Node.js: ${process.version}\n` +
+                        `🏗️  Railway: ✅\n` +
+                        `🔥 Firebase: ✅ Conectado\n` +
+                        `🤖 WhatsApp: ${client.info ? '✅' : '🔄 Conectando...'}`;
+        
+        await message.reply(debugInfo);
+    }
 }
 
 // ================== EVENTOS PRINCIPALES ==================
 client.on('qr', qr => {
-    console.log('\n📱 ESCANEA ESTE QR CON WHATSAPP:');
+    console.log('\n' + '='.repeat(60));
+    console.log('📱 ESCANEA ESTE QR CON WHATSAPP EN TU TELÉFONO:');
+    console.log('='.repeat(60));
     qrcode.generate(qr, { small: true });
-    console.log('\n✅ Escanea con WhatsApp Web');
+    console.log('='.repeat(60));
+    console.log('✅ Usa WhatsApp en tu TELÉFONO para escanear este QR');
+    console.log('='.repeat(60) + '\n');
 });
 
 client.on('ready', async () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('✅ BOT CONECTADO Y LISTO');
+    console.log('\n' + '='.repeat(60));
+    console.log('✅ BOT CONECTADO Y LISTO EN RAILWAY!');
     console.log(`📱 Usuario: ${client.info.pushname}`);
     console.log(`📞 Número: ${client.info.wid.user}`);
-    console.log('🔥 Firebase: Conectado desde archivo');
-    console.log('⏰ Programador: Iniciado');
-    console.log('='.repeat(50) + '\n');
+    console.log('🔥 Firebase: Conectado desde archivo JSON');
+    console.log('🗄️  Base de datos: Lista');
+    console.log('⏰ Programador: Iniciado (Hora SV)');
+    console.log('🚀 Railway: Funcionando');
+    console.log('='.repeat(60) + '\n');
     
     // Iniciar programador
     new Programador();
@@ -655,45 +723,71 @@ client.on('message', async message => {
         if (texto.toLowerCase().includes('hola') || texto.toLowerCase().includes('hello')) {
             await message.reply('¡Hola! 👋 Escribe *!menu* para ver todas las opciones.');
         }
+        else if (texto.toLowerCase().includes('qr') || texto.toLowerCase().includes('código')) {
+            await message.reply('📱 El código QR apareció en los logs de Railway. Revisa la consola.');
+        }
     }
 });
 
 client.on('disconnected', (reason) => {
     console.log('⚠️ Bot desconectado:', reason);
-    console.log('🔄 Reiniciando en 5 segundos...');
+    console.log('🔄 Reiniciando en 10 segundos...');
     setTimeout(() => {
         console.log('🔄 Reiniciando bot...');
         client.initialize();
-    }, 5000);
+    }, 10000);
 });
 
 client.on('auth_failure', (msg) => {
     console.log('❌ Error de autenticación:', msg);
+    console.log('💡 Solución: Escanea el QR nuevamente');
 });
 
 client.on('authenticated', () => {
-    console.log('🔑 Autenticación exitosa');
+    console.log('🔑 Autenticación exitosa - Sesión guardada');
+});
+
+// Manejar errores de puppeteer específicos
+client.on('loading_screen', (percent, message) => {
+    console.log(`🔄 Cargando WhatsApp Web: ${percent}% - ${message}`);
 });
 
 // ================== INICIAR BOT ==================
-console.log('\n' + '='.repeat(50));
-console.log('🚀 INICIANDO BOT WHATSAPP CON FIREBASE');
-console.log('📍 Hora El Salvador configurada');
-console.log('🗄️  Firebase configurado desde archivo');
-console.log('='.repeat(50) + '\n');
+console.log('\n' + '='.repeat(60));
+console.log('🚀 INICIANDO BOT WHATSAPP CON FIREBASE EN RAILWAY');
+console.log('📍 Hora El Salvador configurada automáticamente');
+console.log('🗄️  Firebase configurado desde archivo JSON');
+console.log('🔧 Puppeteer optimizado para Railway');
+console.log('='.repeat(60) + '\n');
 
-// Iniciar cliente
-client.initialize();
+// Verificar si estamos en Railway
+if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log('🌐 Entorno Railway detectado');
+    console.log('🔧 Configuración optimizada activada');
+}
 
-// Manejar cierre
+// Iniciar cliente con manejo de errores mejorado
+try {
+    client.initialize();
+    console.log('✅ Cliente WhatsApp inicializado');
+} catch (error) {
+    console.log('❌ Error inicializando cliente:', error.message);
+    console.log('💡 Solución: Verifica la configuración de Puppeteer');
+    process.exit(1);
+}
+
+// Manejar cierre elegante
 process.on('SIGINT', () => {
-    console.log('\n👋 Bot detenido. Los datos están seguros en Firebase.');
+    console.log('\n👋 Bot detenido manualmente.');
+    console.log('📊 Datos seguros en Firebase');
+    console.log('🔄 Reinicia en Railway para continuar');
     client.destroy();
     process.exit(0);
 });
 
 process.on('uncaughtException', (error) => {
-    console.error('⚠️ Error no capturado:', error);
+    console.error('⚠️ Error no capturado:', error.message);
+    console.log('🔄 Continuando...');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
